@@ -12,11 +12,16 @@ def list_resolutions(url):
             print(Fore.YELLOW + "Resoluções disponíveis:" + Style.RESET_ALL)
             resolutions = []
             for f in formats:
+                resolution = f.get('format_note', 'Desconhecida')
+                size = f.get('filesize', 0) // 1024 ** 2 if f.get('filesize') else None
+
+                # Ignorar streams com resolução "Desconhecida" ou sem tamanho definido
+                if resolution == 'Desconhecida' or size is None:
+                    continue
+
                 if f.get('vcodec') != 'none':  # Filtrar apenas streams com vídeo
                     resolutions.append(f)
                     index = len(resolutions)  # Garante que o índice mostrado corresponda ao real
-                    resolution = f.get('format_note', 'Desconhecida')
-                    size = f.get('filesize', 0) // 1024 ** 2 if f.get('filesize') else 'Tamanho desconhecido'
                     audio_status = "Com áudio" if f.get('acodec') != 'none' else "Sem áudio"
                     print(Fore.CYAN + f"{index}. {resolution} - {f['ext']} - {size} MB - {audio_status}" + Style.RESET_ALL)
             return resolutions
@@ -43,13 +48,12 @@ def download_youtube_video(url, download_path, format_type):
             selected_format = resolutions[choice]
             if selected_format.get('acodec') == 'none':
                 print(Fore.YELLOW + "A resolução escolhida não possui áudio. O áudio será combinado automaticamente." + Style.RESET_ALL)
+                convert_to_mp4 = input(Fore.YELLOW + "Deseja converter para MP4 após a fusão? (s/n): " + Style.RESET_ALL).strip().lower()
+                merge_format = 'mp4' if convert_to_mp4 == 's' else 'mkv'
                 ydl_opts = {
                     'outtmpl': f'{download_path}/%(title)s.%(ext)s',
                     'format': f"{format_id}+bestaudio/best",
-                    'postprocessors': [{
-                        'key': 'FFmpegVideoConvertor',
-                        'preferedformat': 'mp4'
-                    }],
+                    'merge_output_format': merge_format
                 }
             else:
                 ydl_opts = {
