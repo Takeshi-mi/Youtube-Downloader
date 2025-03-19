@@ -4,7 +4,15 @@ from colorama import Fore, Style
 def list_resolutions(url):
     """Lista as resoluções disponíveis para o vídeo"""
     try:
-        ydl_opts = {}
+        ydl_opts = {
+            'quiet': False,
+            'no_warnings': False,
+            'extract_flat': False,
+            'nocheckcertificate': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+            }
+        }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
@@ -31,6 +39,15 @@ def list_resolutions(url):
 
 def download_youtube_video(url, download_path, format_type):
     try:
+        common_opts = {
+            'quiet': False,
+            'no_warnings': False,
+            'nocheckcertificate': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+            }
+        }
+
         if format_type == "mp4":
             resolutions = list_resolutions(url)
             if not resolutions:
@@ -51,18 +68,21 @@ def download_youtube_video(url, download_path, format_type):
                 convert_to_mp4 = input(Fore.YELLOW + "Deseja converter para MP4 após a fusão? (s/n): " + Style.RESET_ALL).strip().lower()
                 merge_format = 'mp4' if convert_to_mp4 == 's' else 'mkv'
                 ydl_opts = {
+                    **common_opts,
                     'outtmpl': f'{download_path}/%(title)s.%(ext)s',
                     'format': f"{format_id}+bestaudio/best",
                     'merge_output_format': merge_format
                 }
             else:
                 ydl_opts = {
-                    'outtmpl': f'{download_path}/%(title)s.%(ext)s',  # Nome do arquivo
-                    'format': format_id,  # Formato escolhido
+                    **common_opts,
+                    'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+                    'format': format_id,
                 }
         elif format_type == "mp3":
             ydl_opts = {
-                'outtmpl': f'{download_path}/%(title)s.%(ext)s',  # Nome do arquivo
+                **common_opts,
+                'outtmpl': f'{download_path}/%(title)s.%(ext)s',
                 'format': 'bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
